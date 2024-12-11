@@ -1266,7 +1266,7 @@ TEST(LogAtLevel, Basic) {
   // We can use the macro version as a C++ stream.
   LOG_AT_LEVEL(severity) << "macro" << ' ' << "version";
 }
-
+#ifndef __QNX__
 TEST(TestExitOnDFatal, ToBeOrNotToBe) {
   // Check the default setting...
   EXPECT_TRUE(base::internal::GetExitOnDFatal());
@@ -1302,6 +1302,7 @@ TEST(TestExitOnDFatal, ToBeOrNotToBe) {
     }, "This should be fatal in debug mode");
 #endif
 }
+#endif
 
 #ifdef HAVE_STACKTRACE
 

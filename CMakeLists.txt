@@ -65,7 +65,7 @@ set (CMAKE_CXX_VISIBILITY_PRESET hidden)
 set (CMAKE_POSITION_INDEPENDENT_CODE ON)
 set (CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 
-set (CMAKE_DEBUG_POSTFIX d)
+#set (CMAKE_DEBUG_POSTFIX d)
 set (CMAKE_THREAD_PREFER_PTHREAD 1)
 
 find_package (GTest NO_MODULE)
@@ -195,7 +195,9 @@ int main(void)
 cmake_push_check_state (RESET)
 set (CMAKE_REQUIRED_LIBRARIES Threads::Threads)
 check_cxx_source_compiles ("
+#ifndef __QNX__
 #define _XOPEN_SOURCE 500
+#endif
 #include <pthread.h>
 int main(void)
 {
@@ -725,9 +727,15 @@ endif (WITH_PKGCONFIG)
 # Unit testing
 
 if (BUILD_TESTING)
-  add_library (glogtest STATIC
-    $<TARGET_OBJECTS:glogbase>
-  )
+  if(QNX)
+    add_library (glogtest SHARED
+      $<TARGET_OBJECTS:glogbase>
+    )
+  else()
+    add_library (glogtest STATIC
+      $<TARGET_OBJECTS:glogbase>
+    )
+  endif()
 
   target_include_directories (glogtest PUBLIC
     $<TARGET_PROPERTY:glog,INCLUDE_DIRECTORIES>)
@@ -818,13 +826,13 @@ if (BUILD_TESTING)
 
   target_link_libraries (demangle_unittest PRIVATE ${_GLOG_TEST_LIBS})
 
-  if (HAVE_STACKTRACE)
+  if (HAVE_STACKTRACE OR (QNX AND HAVE_LIB_UNWIND))
     add_executable (stacktrace_unittest
       src/stacktrace_unittest.cc
     )
 
     target_link_libraries (stacktrace_unittest PRIVATE ${_GLOG_TEST_LIBS})
-  endif (HAVE_STACKTRACE)
+  endif (HAVE_STACKTRACE OR (QNX AND HAVE_LIB_UNWIND))
 
   add_executable (utilities_unittest
     src/utilities_unittest.cc
@@ -832,13 +840,13 @@ if (BUILD_TESTING)
 
   target_link_libraries (utilities_unittest PRIVATE ${_GLOG_TEST_LIBS})
 
-  if (HAVE_STACKTRACE AND HAVE_SYMBOLIZE)
+  if ((HAVE_STACKTRACE OR (QNX AND HAVE_LIB_UNWIND)) AND HAVE_SYMBOLIZE)
     add_executable (signalhandler_unittest
       src/signalhandler_unittest.cc
     )
 
     target_link_libraries (signalhandler_unittest PRIVATE ${_GLOG_TEST_LIBS})
-  endif (HAVE_STACKTRACE AND HAVE_SYMBOLIZE)
+  endif ((HAVE_STACKTRACE OR (QNX AND HAVE_LIB_UNWIND)) AND HAVE_SYMBOLIZE)
 
   add_test (NAME demangle COMMAND demangle_unittest)
   add_test (NAME logging COMMAND logging_unittest)
@@ -1078,3 +1086,26 @@ install (DIRECTORY ${_glog_BINARY_CMake_DATADIR}
 
 install (EXPORT glog-targets NAMESPACE glog:: DESTINATION
   ${_glog_CMake_INSTALLDIR})
+
+if(QNX)
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/
+    DESTINATION ${CMAKE_INSTALL_BINDIR}/glog_tests
+    FILES_MATCHING PATTERN "*_unittest"
+    PATTERN "CMakeFiles" EXCLUDE
+    PATTERN "glog" EXCLUDE
+    PATTERN "share" EXCLUDE
+    PATTERN "Testing" EXCLUDE)
+
+  install(TARGETS glogtest
+    DESTINATION ${_glog_CMake_LIBDIR})
+
+  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
+    DESTINATION ${CMAKE_INSTALL_BINDIR}/glog_tests
+    FILES_MATCHING PATTERN "*_unittest.*"
+    PATTERN "base" EXCLUDE
+    PATTERN "glog" EXCLUDE
+    PATTERN "package_config_unittest" EXCLUDE
+    PATTERN "windows" EXCLUDE
+    PATTERN "*_unittest.cc" EXCLUDE)
+
+endif()
