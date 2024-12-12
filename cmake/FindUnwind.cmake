@@ -7,7 +7,7 @@
 include (FindPackageHandleStandardArgs)
 
 if (QNX)
-  find_path (Unwind_INCLUDE_DIR NAMES unwind.h libunwind.h DOC "unwind include directory" PATHS ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR})
+  find_path (Unwind_INCLUDE_DIR NAMES unwind.h libunwind.h DOC "unwind include directory" PATHS ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR} usr/${CMAKE_INSTALL_INCLUDEDIR})
   find_library (Unwind_LIBRARY NAMES unwind DOC "unwind library" PATHS ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
 else()
   find_path (Unwind_INCLUDE_DIR NAMES unwind.h libunwind.h DOC "unwind include directory")

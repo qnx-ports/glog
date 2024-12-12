@@ -1316,18 +1316,26 @@ static int kBacktraceAtLine = __LINE__ - 2;  // The line of the LOG(INFO) above
 
 TEST(LogBacktraceAt, DoesNotBacktraceWhenDisabled) {
   StrictMock<ScopedMockLog> log;
-
+  #ifndef __QNX__
   FLAGS_log_backtrace_at = "";
 
   EXPECT_CALL(log, Log(_, _, "Backtrace me"));
   EXPECT_CALL(log, Log(_, _, "Not me"));
 
   BacktraceAtHelper();
+  #elif __QNX__ > 799
+  FLAGS_log_backtrace_at = "";
+
+  EXPECT_CALL(log, Log(_, _, "Backtrace me"));
+  EXPECT_CALL(log, Log(_, _, "Not me"));
+
+  BacktraceAtHelper();
+  #endif
 }
 
 TEST(LogBacktraceAt, DoesBacktraceAtRightLineWhenEnabled) {
   StrictMock<ScopedMockLog> log;
-
+  #ifndef __QNX__
   char where[100];
   snprintf(where, 100, "%s:%d", const_basename(__FILE__), kBacktraceAtLine);
   FLAGS_log_backtrace_at = where;
@@ -1344,6 +1352,24 @@ TEST(LogBacktraceAt, DoesBacktraceAtRightLineWhenEnabled) {
   EXPECT_CALL(log, Log(_, _, "Not me"));
 
   BacktraceAtHelper();
+  #elif __QNX__ > 799
+  char where[100];
+  snprintf(where, 100, "%s:%d", const_basename(__FILE__), kBacktraceAtLine);
+  FLAGS_log_backtrace_at = where;
+
+  // The LOG at the specified line should include a stacktrace which includes
+  // the name of the containing function, followed by the log message.
+  // We use HasSubstr()s instead of ContainsRegex() for environments
+  // which don't have regexp.
+  EXPECT_CALL(log, Log(_, _, AllOf(HasSubstr("stacktrace:"),
+                                   HasSubstr("BacktraceAtHelper"),
+                                   HasSubstr("main"),
+                                   HasSubstr("Backtrace me"))));
+  // Other LOGs should not include a backtrace.
+  EXPECT_CALL(log, Log(_, _, "Not me"));
+
+  BacktraceAtHelper();
+  #endif
 }
 
 #endif // HAVE_STACKTRACE
