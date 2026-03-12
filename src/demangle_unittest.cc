@@ -125,9 +125,6 @@ TEST(Demangle, Clones) {
 
 TEST(Demangle, FromFile) {
   string test_file = FLAGS_test_srcdir + "/src/demangle_unittest.txt";
-  #ifdef __QNX__
-  test_file = "src/demangle_unittest.txt";
-  #endif
   ifstream f(test_file.c_str());  // The file should exist.
   EXPECT_FALSE(f.fail());
 
