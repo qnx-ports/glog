@@ -93,6 +93,15 @@ def glog_library(namespace = "google", with_gflags = 1, **kwargs):
         "-fvisibility=hidden",
     ]
 
+    qnx_copts = wasm_copts + [
+        "-D_QNX_SOURCE",
+        "-DGLOG_EXPORT=__attribute__((visibility(\\\"default\\\")))",
+        # For src/logging.cc to create symlinks.
+        "-DHAVE_UNISTD_H",
+        "-fvisibility-inlines-hidden",
+        "-fvisibility=hidden",
+    ]
+
     freebsd_only_copts = [
         # Enable declaration of _Unwind_Backtrace
         "-D_GNU_SOURCE",
@@ -184,6 +193,7 @@ def glog_library(namespace = "google", with_gflags = 1, **kwargs):
                 "@bazel_tools//src/conditions:darwin": common_copts + linux_or_darwin_copts + darwin_only_copts,
                 "@bazel_tools//src/conditions:freebsd": common_copts + linux_or_darwin_copts + freebsd_only_copts,
                 ":wasm": common_copts + wasm_copts,
+                "@bazel_tools//src/conditions:qnx": qnx_copts + common_copts,
                 "//conditions:default": common_copts + linux_or_darwin_copts,
             }) +
             select({
